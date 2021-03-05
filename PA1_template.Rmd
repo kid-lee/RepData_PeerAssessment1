@@ -4,14 +4,86 @@ output:
   html_document:
     keep_md: true
 ---
+## load libiary
+
+```{r, echo=FALSE}
+
+library(dplyr)
+library(data.table)
+```
 
 
 ## Loading and preprocessing the data
 
+```{r unzipfile, echo=TRUE}
+
+unzip(zipfile = "activity.zip", exdir = getwd())
+
+dt <- read.table("activity.csv", na.strings = "NA", sep = "," , header = T)
+
+dt <- dt[complete.cases(dt),]
+
+dt$date <- as.Date(dt$date, format = "%Y-%m-%d")
+
+
+```
 
 
 ## What is mean total number of steps taken per day?
 
+```{r allstepsperday ,echo=TRUE}
+totalStepbyDay <- aggregate(dt$steps, by=list(date = dt$date), FUN = sum)
+
+colnames(totalStepbyDay)[2] <- "daily_steps"
+
+#steplot <- barplot(totalStepbyDay$x, names.arg = as.character(totalStepbyDay$date),
+        #xlab = "date", ylab="total number of steps", space = 0)
+
+print(nrow(totalStepbyDay))
+
+steplot <- hist(totalStepbyDay$daily_steps, breaks = nrow(totalStepbyDay), main = "total num of steps",
+                xlab="Days", ylab="steps (thousands)")
+
+```
+
+```{r}
+library(ggplot2)
+# Basic histogram
+myplot <- ggplot(totalStepbyDay, aes(daily_steps)) + geom_histogram()
+
+myplot + 
+  
+  geom_vline(xintercept = mean(totalStepbyDay$daily_steps),        # Add line for mean
+             col = "red",
+             lwd = 1) + 
+  
+  geom_vline(xintercept = median(totalStepbyDay$daily_steps),        # Add line for mean
+             col = "blue",
+             lwd = 1) +
+  
+  annotate("text",                        # Add text for mean
+           x = 80,
+           y = 8,
+           label = paste("Mean =", mean(totalStepbyDay$daily_steps)),
+           col = "red",
+           size = 5) + 
+
+    annotate("text",                        # Add text for mean
+           x = 80,
+           y = 6,
+           label = paste("median  =", median(totalStepbyDay$daily_steps)),
+           col = "blue",
+           size = 5)
+  
+
+
+#geom_vline(data=totalStepbyDay$daily_steps, aes(xintercept = mean), colour='black') +
+#geom_vline(data=totalStepbyDay$daily_steps, aes(xintercept = median), colour='red')
+# Change the width of bins
+
+#summary(totalStepbyDay$daily_steps)
+
+```
 
 
 ## What is the average daily activity pattern?
