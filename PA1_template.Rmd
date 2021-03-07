@@ -48,7 +48,7 @@ summary(totalStepbyDay$daily_steps)
 ```{r}
 library(ggplot2)
 # Basic histogram
-myplot <- ggplot(totalStepbyDay, aes(daily_steps)) + geom_histogram()
+myplot <- ggplot(totalStepbyDay, aes(daily_steps)) + geom_histogram(binwidth=2000)
 
 myplot + 
   
@@ -66,7 +66,6 @@ myplot +
   geom_vline(xintercept = median(totalStepbyDay$daily_steps),        # Add line for mean
              col = "blue",
              lwd = 1) +
-  
 
 
     annotate("text",                        # Add text for mean
@@ -125,20 +124,25 @@ summary(dirtydt)
 ```{r}
 
 # Create a table with interval and medial of steps 
-interMedian <- aggregate(dt$steps, by=list(dailyInterval = dt$interval), FUN = median)
+interMedian <- aggregate(dt$steps, by=list(interval = dt$interval), FUN = median)
 
 colnames(interMedian)[2] <- "steps"
 
-# Add an col in dirtydt called ImputStep, we should be able to see both NA and ImputStep
-# data in the same table, easier to plot alter
-# 1: Chop the step col, attached it back to dirtydt, 
-# 2: then replace all NAs in this col with values in interMedian
-
-
+# keep the dirty data, just for comparision
 tempCol <- dirtydt$steps
+dirtydt$OrgStep <- tempCol
 
-dirtydt$ImputStep <- tempCol
+# left join dirty table with interMedian on interval
+# replace steps in dirtydt with NA with steps in interMedian table
+# remove -steps.y, -steps.x 
+temptbl <- left_join(dirtydt,interMedian, by = "interval") %>% 
+        mutate(steps = ifelse(is.na(steps.x), steps.y, steps.x)) %>%
+        select(-steps.y, -steps.x) 
 
+
+totalStepbyDay1 <- aggregate(temptbl$steps, by=list(date = temptbl$date), FUN = sum)
+
+colnames(totalStepbyDay1)[2] <- "daily_steps"
 
 
 str(dirtydt)
@@ -146,8 +150,41 @@ str(dirtydt)
 ```
 
 
-### Over lay Imputed date and original data
+### plot for imputed NA data
+```{r}
+
+myplot1 <- ggplot(totalStepbyDay1, aes(daily_steps)) + geom_histogram(binwidth=2000)
+
+myplot1 + 
+  
+  geom_vline(xintercept = mean(totalStepbyDay1$daily_steps),        # Add line for mean
+             col = "red",
+             lwd = 1) + 
+  
+  annotate("text",                        # Add text for mean
+           x = 16000,
+           y = 8,
+           label = paste("Mean =", mean(totalStepbyDay1$daily_steps)),
+           col = "red",
+           size = 5) + 
+  
+  geom_vline(xintercept = median(totalStepbyDay1$daily_steps),        # Add line for mean
+             col = "blue",
+             lwd = 1) +
+
+
+    annotate("text",                        # Add text for mean
+           x = 14000,
+           y = 7,
+           label = paste("Median  =", median(totalStepbyDay1$daily_steps),"(Media and Mean overlaps)"),
+           col = "blue",
+           size = 5)
+  
+
+```
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### adding factor var
