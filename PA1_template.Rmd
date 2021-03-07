@@ -1,10 +1,11 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
-output: 
+output: "PA1_template_files/figure-html"
   html_document:
     keep_md: true
 ---
-## load libiary
+## load libiary 
+dplyr,data.table
 
 ```{r, echo=FALSE}
 
@@ -45,7 +46,7 @@ summary(totalStepbyDay$daily_steps)
 ```
 ### Draw the histgram, Median and Mean lines (Median and Mean are overlapping)
 
-```{r}
+```{r, echo=TRUE}
 library(ggplot2)
 # Basic histogram
 myplot <- ggplot(totalStepbyDay, aes(daily_steps)) + geom_histogram(binwidth=2000)
@@ -83,7 +84,7 @@ myplot +
 
 ### aggregate data by 5min interval 
 
-```{r}
+```{r, echo=TRUE}
 dailyStepInterval <- aggregate(dt$steps, by=list(dailyInterval = dt$interval), FUN = sum)
 
 colnames(dailyStepInterval)[2] <- "daily_steps"
@@ -92,7 +93,7 @@ colnames(dailyStepInterval)[2] <- "daily_steps"
 
 ### Plot interval and total steps
 
-```{r}
+```{r, echo=TRUE}
 ggplot(data=dailyStepInterval, 
        aes(x=dailyInterval, 
            y=daily_steps, group=1)) +
@@ -109,7 +110,7 @@ ggplot(data=dailyStepInterval,
 
 ### Checking NA in orignal data set
 
-```{r}
+```{r, echo=TRUE}
 
 #read in original dt
 dirtydt <- read.table("activity.csv", na.strings = "NA", sep = "," , header = T)
@@ -121,7 +122,7 @@ summary(dirtydt)
 
 ### Replace NA with interval-median (2304 NA in "setpes" accroding to summary)
 
-```{r}
+```{r, echo=TRUE}
 
 # Create a table with interval and medial of steps 
 interMedian <- aggregate(dt$steps, by=list(interval = dt$interval), FUN = median)
@@ -150,8 +151,8 @@ str(dirtydt)
 ```
 
 
-### plot for imputed NA data
-```{r}
+### plot for imputed NA data -- Mean, median are both different
+```{r, echo=TRUE}
 
 myplot1 <- ggplot(totalStepbyDay1, aes(daily_steps)) + geom_histogram(binwidth=2000)
 
@@ -188,3 +189,32 @@ myplot1 +
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ### adding factor var
+
+```{r, echo=TRUE}
+
+# fix date format
+temptbl$date <- as.Date(temptbl$date, format = "%Y-%m-%d")
+
+
+# convert date to weekeday, change to factor var
+temptbl$Weekdays <- weekdays(temptbl$date)
+
+temptbl <- temptbl %>% mutate(Weekdays = ifelse(Weekdays %in% c("Saturday","Sunday"), "Weekend", "Weekday")
+                              ,as.factor(Weekdays))
+
+
+# Select sum of steps, group by interval and weekedays 
+q5data <- temptbl %>% 
+                  group_by(interval, `as.factor(Weekdays)`) %>%
+                  summarise(totaldailysteps = sum(steps))
+
+```
+### produce the plot, over lay weekday and weekend data
+
+```{r, echo=TRUE}
+
+ggplot(q5data, aes(x=interval,y=totaldailysteps,group=`as.factor(Weekdays)`)) + 
+      geom_line(aes(color=`as.factor(Weekdays)`))
+
+```
+

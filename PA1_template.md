@@ -4,7 +4,8 @@ output:
   html_document:
     keep_md: true
 ---
-## load libiary
+## load libiary 
+dplyr,data.table
 
 
 ```
@@ -194,7 +195,7 @@ str(dirtydt)
 ```
 
 
-### plot for imputed NA data
+### plot for imputed NA data -- Mean, median are both different
 
 ```r
 myplot1 <- ggplot(totalStepbyDay1, aes(daily_steps)) + geom_histogram(binwidth=2000)
@@ -229,3 +230,38 @@ myplot1 +
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### adding factor var
+
+
+```r
+# fix date format
+temptbl$date <- as.Date(temptbl$date, format = "%Y-%m-%d")
+
+
+# convert date to weekeday, change to factor var
+temptbl$Weekdays <- weekdays(temptbl$date)
+
+temptbl <- temptbl %>% mutate(Weekdays = ifelse(Weekdays %in% c("Saturday","Sunday"), "Weekend", "Weekday")
+                              ,as.factor(Weekdays))
+
+
+# Select sum of steps, group by interval and weekedays 
+q5data <- temptbl %>% 
+                  group_by(interval, `as.factor(Weekdays)`) %>%
+                  summarise(totaldailysteps = sum(steps))
+```
+
+```
+## `summarise()` has grouped output by 'interval'. You can override using the `.groups` argument.
+```
+### produce the plot, over lay weekday and weekend data
+
+
+```r
+ggplot(q5data, aes(x=interval,y=totaldailysteps,group=`as.factor(Weekdays)`)) + 
+      geom_line(aes(color=`as.factor(Weekdays)`))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
